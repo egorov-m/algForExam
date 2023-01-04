@@ -201,3 +201,62 @@ public static IList<T> ShellSort<T>(this IList<T> collection) where T : ICompara
     return collection;
 }
 ```
+
+## Билет 6: Алгоритм бинарного (двоичного) поиска (Binary Search)
+
+### Описание
+Алгоритм поиска, используемый в отсортированном массиве путём многократного деления интервала поиска пополам. Идея состоит в том, чтобы использовать информацию о том, что массив отсортирован, и уменьшить временную сложность до *O(log(n))*.
+
+Может быть реализован двумя способами: итерационный метод, рекурсивный метод — подход "разделяй и властвуй".
+
+**Сложность (рекурсивный, итеративный метод):** *O(log(n))*, в лучшем случае *O(n)*.
+
+**Вспомогательное пространство (рекурсивный метод):** *O(log(n))*.
+
+**Вспомогательное пространство (итеративный метод):** *O(1)*.
+
+Дополнительно: https://www.geeksforgeeks.org/binary-search/, https://www.programiz.com/dsa/binary-search
+
+### [Реализация (C# пример)](./algForExam/BinarySearchExtensions.cs)
+
+#### Рекурсивный метод
+```cs
+private static int BinarySearchRecursive<T>(this IList<T> collection, IComparer<T> comparer, T key, int left, int right) where T : IComparable
+{
+    if (right < left) throw new ArgumentOutOfRangeException("Левая / правая граница указана неправильно.");
+
+    var mid = left + (right - left) / 2; // ! вычислять нужно именно так
+    var value = collection[mid];
+
+    if (key.Equals(value)) return mid;
+
+    return comparer.Compare(value, key) > 0 // Коллекция отсортирована по возрастанию
+        ? collection.BinarySearchRecursive(comparer, key, left, mid - 1)
+        : collection.BinarySearchRecursive(comparer, key, mid + 1, right);
+}
+```
+
+#### Итеративный метод
+```cs
+private static int BinarySearchIterative<T>(this IList<T> collection, T key, int left, int right) where T : IComparable
+{
+    while (left <= right)
+    {
+        var mid = left + (right - left) / 2; // ! вычислять нужно именно так
+        var value = collection[mid];
+
+        if (key.Equals(value)) return mid;
+
+        if (value.CompareTo(key) > 0) // Коллекция отсортирована по возрастанию
+        {
+            right = mid - 1;
+        }
+        else
+        {
+            left = mid + 1;
+        }
+    }
+
+    throw new ArgumentOutOfRangeException("Левая / правая граница указана неправильно.");
+}
+```
