@@ -4,10 +4,14 @@
 
 ### Описание
 Простейший алгоритм сортировки, который многократно меняет местами соседние элементы, если они расположены в неправильном порядке. Проход по списку повторяется до тех пор, пока список не будет отсортирован.
-**Сложность:** *O(n^2)*, алгоритм не подходит для большинства наборов данных, поскольку его временная сложность в среднем и худшем случае довольно высока.
+
+**Сложность:** *O(n^2)*, в лучшем случае (коллекция уже отсортирована) *O(n)*, алгоритм не подходит для большинства наборов данных, поскольку его временная сложность в среднем и худшем случае довольно высока.
+
 **Вспомогательное пространство:** *O(1)*.
 
-### Реализация (C# пример)
+Дополнительно: https://www.geeksforgeeks.org/bubble-sort/
+
+### [Реализация (C# пример)](./algForExam/BubbleSortExtensions.cs)
 ```cs
 public static IList<T> BubbleSort<T>(this IList<T> collection) where T : IComparable
 {
@@ -40,7 +44,9 @@ public static IList<T> BubbleSort<T>(this IList<T> collection) where T : ICompar
 
 **Вспомогательное пространство:** *O(1)*.
 
-### Реализация (C# пример)
+Дополнительно: https://www.geeksforgeeks.org/insertion-sort/
+
+### [Реализация (C# пример)](./algForExam/InsertionSortExtensions.cs)
 ```cs
 public static IList<T> InsertionSort<T>(this IList<T> collection) where T : IComparable
 {
@@ -56,6 +62,44 @@ public static IList<T> InsertionSort<T>(this IList<T> collection) where T : ICom
         }
 
         collection[j + 1] = item;
+    }
+
+    return collection;
+}
+```
+
+## Билет 3: Сортировка выбором (Selection Sort)
+
+### Описание
+Алгоритм сортирует массив, многократно находя минимальный элемент (с учётом возрастания) из несортированной части и помещая его в начало. Алгоритм поддерживает два под массива в заданном массиве: под массив, который уже отсортирован, оставшийся под массив — неотсортированный.
+
+По-умолчанию реализация алгоритма не [стабильной*](#стабильный-алгоритм). Однако этого можно достичь путём замены операции смены элементов местами на операцию толкания элементов вперёд.
+
+#### Стабильный алгоритм:
+Тот алгоритм, который не меняет порядок элементов с одинаковыми ключами относительно друг друга.
+
+**Сложность:** *O(n^2)* — во всех случаях, так-как есть два вложенных цикла: один цикл для выбора элемента массива один за другим *O(n)*, другой цикл для сравнения этого элемента с любым другим *O(n)*.
+
+**Вспомогательное пространство:** *O(1)*.
+
+Дополнительно: https://www.geeksforgeeks.org/selection-sort, https://www.geeksforgeeks.org/stable-selection-sort/
+
+### [Реализация (C# пример)](./algForExam/SelectionSortExtensions.cs)
+```cs
+public static IList<T> SelectionSort<T>(this IList<T> collection) where T : IComparable
+{
+    for (var i = 0; i < collection.Count - 1; i++)
+    {
+        var index = i;
+        for (var j = i + 1; j < collection.Count; j++)
+        {
+            if (collection[index].CompareTo(collection[j]) > 0) // Сортировка по возрастанию
+            {
+                index = j;
+            }
+        }
+
+        (collection[index], collection[i]) = (collection[i], collection[index]);
     }
 
     return collection;
