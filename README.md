@@ -221,7 +221,7 @@ public static IList<T> ShellSort<T>(this IList<T> collection) where T : ICompara
 
 #### Рекурсивный метод
 ```cs
-private static int BinarySearchRecursive<T>(this IList<T> collection, IComparer<T> comparer, T key, int left, int right) where T : IComparable
+private static int BinarySearchRecursive<T>(this IList<T> collection, T key, int left, int right) where T : IComparable
 {
     if (right < left) throw new ArgumentOutOfRangeException("Левая / правая граница указана неправильно.");
 
@@ -230,9 +230,9 @@ private static int BinarySearchRecursive<T>(this IList<T> collection, IComparer<
 
     if (key.Equals(value)) return mid;
 
-    return comparer.Compare(value, key) > 0 // Коллекция отсортирована по возрастанию
-        ? collection.BinarySearchRecursive(comparer, key, left, mid - 1)
-        : collection.BinarySearchRecursive(comparer, key, mid + 1, right);
+    return value.CompareTo(key) > 0 // Коллекция отсортирована по возрастанию
+        ? collection.BinarySearchRecursive(key, left, mid - 1)
+        : collection.BinarySearchRecursive(key, mid + 1, right);
 }
 ```
 
@@ -258,5 +258,102 @@ private static int BinarySearchIterative<T>(this IList<T> collection, T key, int
     }
 
     throw new ArgumentOutOfRangeException("Левая / правая граница указана неправильно.");
+}
+```
+
+## Билет 7: Быстрая сортировка (Quick Sort)
+
+### Описание
+Алгоритм быстрой сортировки представляет собой алгоритм «разделяй и властвуй». Первоначально он выбирает элемент в качестве опорного элемента и разбивает данный массив вокруг выбранного опорного элемента. Существует много разных версий QuickSort, которые по-разному выбирают точку опоры: 1. всегда выбирайте первый элемент в качестве опорного, 2. всегда выбирайте последний элемент в качестве опорного, 3. выберите случайный элемент в качестве точки опоры, 4. выберите медиану в качестве точки опоры. Также есть несколько схем разделения.
+
+#### Схема разделения Ломуто:
+Предполагается, что опорный элемент является последним. Теперь инициализируется два счётчика: *i* и *j*. Выполняется итерация по массиву, увеличивается *i*, если *array[i] <= pivot(array[i] >= pivot)*, и заменяется *array[i]* на *array[j]*, в противном случае увеличивается только счётчик *j*. После выхода из цикла, меняются местами *array[i]* и *array[pivotIndex]*.
+
+#### Схема разделения Хоара
+(в целом более эффективен - в среднем делает в три раза меньше свопов):
+Работает по принципу инициализации двух указателей, которые указывают на массив с начала и конца. Они двигаются друг к другу до тех пор, пока не будет найдена ситуация, когда меньше(больше) значение справа, а больше(меньше) значение слева, относительно опорного элемента. После этого два значения меняются местами.
+
+**Замечание:** Если в качестве опорного элемента выбирать последний, то схема разделения Хоара может привезти к тому, что QuickSort уйдёт в бесконечную рекурсию, в этом случае нужно будет произвести замену элемента.
+
+**Сложность:**
+- <u>Лучший случай:</u> *O(n * log(n))*, возникает в случае, когда опорный элемент является средним элементом или рядом со средним;
+- <u>Худший случай:</u> *O(n2)*, возникает в случае, когда выбранный опорный элемент является самым большим или самым маленьким;
+- <u>Средний случай:</u> *O(n * log(n))*, происходит в случае, когда вышеуказанные условия не возникают;
+
+Дополнительно: https://www.geeksforgeeks.org/quick-sort/, https://www.geeksforgeeks.org/hoares-vs-lomuto-partition-scheme-quicksort/, https://www.programiz.com/dsa/quick-sort
+
+### [Реализация (C# пример)](./algForExam/QuickSortExtensions.cs)
+
+#### Метод разделения Ломуто
+```cs
+private static IList<T> QuickSortLomuto<T>(this IList<T> collection, int left, int right) where T : IComparable
+{
+    if (left >= right) return collection;
+    var pivot = collection.PartitionLomuto(left, right);
+    QuickSortLomuto(collection, left, pivot - 1);
+    QuickSortLomuto(collection, pivot + 1, right);
+
+    return collection;
+}
+
+private static int PartitionLomuto<T>(this IList<T> collection, int left, int right) where T : IComparable
+{
+    var pivot = left - 1; // В качестве опорного элемента выбирается самый левый элемент
+    for (var i = left; i < right; i++)
+    {
+        if (collection[right].CompareTo(collection[i]) > 0) // Сортировка по возрастанию
+        {
+            pivot++;
+            (collection[pivot], collection[i]) = (collection[i], collection[pivot]);
+        }
+    }
+
+    pivot++;
+    (collection[pivot], collection[right]) = (collection[right], collection[pivot]);
+
+    return pivot;
+}
+```
+
+#### Метод разделения Хоара
+```cs
+private static IList<T> QuickSortHoare<T>(this IList<T> collection, int left, int right) where T : IComparable
+{
+    if (left < right)
+    {
+        var pivot = collection.PartitionHoare(left, right);
+        collection.QuickSortHoare(left, pivot);
+        collection.QuickSortHoare(pivot + 1, right);
+    }
+
+    return collection;
+}
+
+private static int PartitionHoare<T>(this IList<T> collection, int left, int right) where T : IComparable
+{
+    var pivot = collection[left]; // В качестве опорного элемента выбирается самый левый элемент
+
+    var i = left - 1;
+    var j = right + 1;
+
+    while (true)
+    {
+        do
+        {
+            i++;
+        } while (pivot.CompareTo(collection[i]) > 0); // Сортировка по возрастанию
+
+        do
+        {
+            j--;
+        } while (collection[j].CompareTo(pivot) > 0); // Сортировка по возрастанию
+
+        if (i >= j)
+        {
+            return j;
+        }
+
+        (collection[i], collection[j]) = (collection[j], collection[i]);
+    }
 }
 ```
