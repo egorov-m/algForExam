@@ -266,7 +266,7 @@ private static int BinarySearchIterative<T>(this IList<T> collection, T key, int
 ### Описание
 Алгоритм быстрой сортировки представляет собой алгоритм «разделяй и властвуй». Первоначально он выбирает элемент в качестве опорного элемента и разбивает данный массив вокруг выбранного опорного элемента. Существует много разных версий QuickSort, которые по-разному выбирают точку опоры: 1. всегда выбирайте первый элемент в качестве опорного, 2. всегда выбирайте последний элемент в качестве опорного, 3. выберите случайный элемент в качестве точки опоры, 4. выберите медиану в качестве точки опоры. Также есть несколько схем разделения.
 
-#### Схема разделения Ломуто:
+#### Схема разделения Ломуто
 Предполагается, что опорный элемент является последним. Теперь инициализируется два счётчика: *i* и *j*. Выполняется итерация по массиву, увеличивается *i*, если *array[i] <= pivot(array[i] >= pivot)*, и заменяется *array[i]* на *array[j]*, в противном случае увеличивается только счётчик *j*. После выхода из цикла, меняются местами *array[i]* и *array[pivotIndex]*.
 
 #### Схема разделения Хоара
@@ -354,6 +354,597 @@ private static int PartitionHoare<T>(this IList<T> collection, int left, int rig
         }
 
         (collection[i], collection[j]) = (collection[j], collection[i]);
+    }
+}
+```
+
+## Билет 8: Внешняя сортировка слиянием (External merge sort)
+
+### Описание
+**Внешняя сортировка** – это сортировка данных, которые расположены на внешних устройствах и не вмещающихся в оперативную память.
+
+Основным понятием при использовании внешней сортировки является понятие серии. **Серия (упорядоченный отрезок)** – это последовательность элементов, которая упорядочена по ключу. Максимальное количество серий в файле *N* (все элементы не упорядочены). Минимальное количество серий одна (все элементы упорядочены).
+
+В основе большинства методов внешних сортировок лежит процедура слияния и процедура распределения. **Слияние** – это процесс объединения двух (или более) упорядоченных серий в одну упорядоченную последовательность при помощи циклического выбора элементов, доступных в данный момент. **Распределение** – это процесс разделения упорядоченных серий на два и несколько вспомогательных файла.
+
+**Фаза** – это действия по однократной обработке всей последовательности элементов. **Двухфазная сортировка** – это сортировка, в которой отдельно реализуется две фазы: распределение и слияние. **Однофазная сортировка** – это сортировка, в которой объединены фазы распределения и слияния в одну.
+
+**Двухпутевым слиянием** называется сортировка, в которой данные распределяются на два вспомогательных файла. **Многопутевым слиянием** называется сортировка, в которой данные распределяются на *N (N > 2)* вспомогательных файлов.
+
+#### Сортировка простым слиянием (прямое слияние, Direct merge sort)
+В данном алгоритме длина серий фиксируется на каждом шаге. В исходном файле все серии имеют длину *1*, после первого шага она равна *2*, после второго – *4*, после третьего – *8*, после *k-го* шага – *2^k*.
+
+***Алгоритм:***
+1. Исходный файл *f* разбивается на два вспомогательных файла *f1* и *f2*.
+2. Вспомогательные файлы *f1* и *f2* сливаются в файл *f*, при этом одиночные элементы образуют упорядоченные пары.
+3. Полученный файл *f* вновь обрабатывается, как указано в шагах 1 и 2. При этом упорядоченные пары переходят в упорядоченные четверки.
+4. Повторяя шаги, сливаем четверки в восьмерки и т.д., каждый раз удваивая длину слитых последовательностей до тех пор, пока не будет упорядочен целиком весь файл.
+
+После выполнения *i* проходов получаем два файла, состоящих из серий длины *2^i*. Окончание процесса происходит при выполнении условия *2^i >= n*. Следовательно, процесс сортировки простым слиянием требует порядка *O(log(n))* проходов по данным.
+
+**Замечание:** При использовании метода прямого слияния не принимается во внимание то, что исходный файл может быть частично отсортированным, т.е. может содержать упорядоченные подпоследовательности записей.
+
+![Схема выполнения сортировки прямым слиянием](https://intuit.ru/EDI/28_11_18_2/1543357168-6234/tutorial/909/objects/43/files/43_01.png)
+
+Исходный и вспомогательные файлы будут ***O(log(n))*** раз прочитаны и столько же раз записаны.
+
+**Сложность:** *O(n \* log(n))*.
+
+#### Сортировка естественным слиянием (Natural merge sort)
+
+В сравнении с методом прямого слияния, сортировка обладает некоторым преимуществом: учитывается тот факт, что могут содержаться упорядоченные подпоследовательности. То есть, ***длинна серии*** не ограничивается, а определяется количеством элементов в уже упорядоченных подпоследовательностях, выделяемых на каждом проходе.
+
+***Алгоритм:***
+1. Исходный файл *f* разбивается на два вспомогательных файла *f1* и *f2*. Распределение происходит следующим образом: поочередно считываются записи *ai* исходной последовательности (неупорядоченной) таким образом, что если значения ключей соседних записей удовлетворяют условию *f(ai) <= f(ai+1)*, то они записываются в первый вспомогательный файл *f1*. Как только встречаются *f(ai) > f(ai+1)*, то записи *ai+1* копируются во второй вспомогательный файл *f2*. Процедура повторяется до тех пор, пока все записи исходной последовательности не будут распределены по файлам.
+2. Вспомогательные файлы *f1* и *f2* сливаются в файл *f*, при этом серии образуют упорядоченные последовательности.
+3. Полученный файл *f* вновь обрабатывается, как указано в шагах *1* и *2*.
+4. Повторяя шаги, сливаем упорядоченные серии до тех пор, пока не будет упорядочен целиком весь файл.
+
+Естественное слияние, у которого после фазы распределения количество серий во вспомогательных файлах отличается друг от друга не более чем на единицу, называется ***сбалансированным слиянием***, в противном случае – ***несбалансированное слияние***.
+
+![Пример естественного слияния. Изображение 1.](https://studref.com/htm/img/15/11119/81.png)
+![Пример естественного слияния. Изображение 2.](https://studref.com/htm/img/15/11119/82.png)
+![Пример естественного слияния. Изображение 3.](https://studref.com/htm/img/15/11119/84.png)
+![Пример естественного слияния. Изображение 4.](https://studref.com/htm/img/15/11119/85.png)
+![Пример естественного слияния. Изображение 5.](https://studref.com/htm/img/15/11119/86.png)
+![Пример естественного слияния. Изображение 6.](https://studref.com/htm/img/15/11119/87.png)
+
+Таким образом, число чтений или перезаписей файлов при использовании метода естественного слияния будет не хуже, чем при применении метода простого слияния, а в среднем – даже лучше. Но в этом методе увеличивается число сравнений за счет тех, которые требуются для распознавания концов серий. Помимо этого, максимальный размер вспомогательных файлов может быть близок к размеру исходного файла, так как длина серий может быть произвольной.
+
+#### Сортировка многопутевым слиянием (Multi-Way merge sort)
+
+Данный метод сортировки является модификацией метода естественного слияния. Временные затраты на любую сортировку последовательностей пропорциональны числу требуемых проходов, так как при каждом проходе копируются все данные. Чтобы уменьшить число этих проходов, серии распределяют на последовательности, число которых больше 2-х.
+
+Слияние *Р* серий, поровну распределены в *М* последовательностей, дает в результате *Р / М* серий. Второй проход уменьшить это число до *Р / M^2*, третий - до *Р / M^3* и т.д. Поэтому общие число проходов многопутевого слияния будет равно *Log m (K)*, где *К* - число элементов в последовательности. Итак, в этом методе, по сравнению с методом естественно слияния, добавляются *М* путей распределения и слияния последовательностей.
+
+Рассмотрим в качестве примера сортировку трехпутевым слиянием следующей последовательности:
+![Пример многопутевого слияния. Изображение 1.](https://studref.com/htm/img/15/11119/88.png)
+![Пример многопутевого слияния. Изображение 2.](https://studref.com/htm/img/15/11119/89.png)
+![Пример многопутевого слияния. Изображение 3.](https://studref.com/htm/img/15/11119/90.png)
+![Пример многопутевого слияния. Изображение 4.](https://studref.com/htm/img/15/11119/91.png)
+![Пример многопутевого слияния. Изображение 5.](https://studref.com/htm/img/15/11119/92.png)
+![Пример многопутевого слияния. Изображение 6.](https://studref.com/htm/img/15/11119/93.png)
+![Пример многопутевого слияния. Изображение 7.](https://studref.com/htm/img/15/11119/94.png)
+![Пример многопутевого слияния. Изображение 8.](https://studref.com/htm/img/15/11119/95.png)
+![Пример многопутевого слияния. Изображение 9.](https://studref.com/htm/img/15/11119/96.png)
+![Пример многопутевого слияния. Изображение 10.](https://studref.com/htm/img/15/11119/97.png)
+
+Рассмотренный пример показывает, что алгоритм многопутевого (естественного) слияния работает эффективнее, чем рассмотренные ранее алгоритмы прямого и естественного слияния. Так, при трехпутевом слиянии для сортировки указанной последовательности потребовалось только три прохода, в то время как для естественного и прямого слияния потребовалось бы четыре и пять проходов соответственно.
+
+Дополнительно: https://intuit.ru/studies/courses/648/504/lecture/11473, https://studref.com/701956/informatika/estestvennoe_sliyanie, https://studfile.net/preview/930712/page:7, https://studref.com/701957/informatika/mnogoputevaya_sortirovka, https://www.geeksforgeeks.org/external-sorting, https://josef.codes/sorting-really-large-files-with-c-sharp
+
+### [Реализация (C# пример)](./algForExam//ExternalSortExtensions.cs)
+
+#### Сортировка прямым слиянием
+```cs
+public class DirectMergeSorter
+{
+    public string InputFilePath { get; set; }
+
+    public string OutputFilePath { get; set; } = "sorted.csv";
+
+    public int SortKey { get; set; }
+
+    private long _seriesLength;
+
+    private long _countSegments;
+
+    private const string AuxiliaryFilePathA = "A.csv";
+
+    private const string AuxiliaryFilePathB = "B.csv";
+
+    private readonly Func<double, double, bool> _ascending = (x, y) => x < y; // Сортировка по возрастанию
+
+    private readonly Func<double, double, bool> _descending = (x, y) => x < y; // Сортировка по убыванию
+
+    public DirectMergeSorter(string filePath = "unsorted.csv", int sortKey = 0)
+    {
+        InputFilePath = filePath;
+        SortKey = sortKey;
+        _seriesLength = 1;
+    }
+
+    public void Sort() => Sort(_ascending);
+
+    public void SortDescending() => Sort(_descending);
+
+    private void Sort(Func<double, double, bool> order)
+    {
+        var index = 1;
+        while (true)
+        {
+            SplitToFiles();
+
+            if (_countSegments == 1) break;
+
+            Merge(order);
+        }
+    }
+
+    private static int GetCountLinesFile(string filePath)
+    {
+        using var sr = new StreamReader(filePath);
+        var count = 0;
+        while ((sr.ReadLine()) != null)
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    private void SplitToFiles()
+    {
+        _countSegments = 1;
+
+        using var sr = _seriesLength == 1 ? new StreamReader(InputFilePath) : new StreamReader(OutputFilePath);
+
+        using var swA = new StreamWriter(AuxiliaryFilePathA);
+        using var swB = new StreamWriter(AuxiliaryFilePathB);
+
+        var counter = 0L;
+        var isFirstFile = true;
+
+        var length = GetCountLinesFile(_seriesLength == 1 ? InputFilePath : OutputFilePath);
+        var position = 0L;
+
+        while (position != length)
+        {
+            if (counter == _seriesLength)
+            {
+                isFirstFile = !isFirstFile;
+                counter = 0;
+                _countSegments++;
+            }
+
+            var str = sr.ReadLine();
+
+            position++;
+
+            if (isFirstFile)
+            {
+                swA.WriteLine(str);
+            }
+            else
+            {
+                swB.WriteLine(str);
+            }
+
+            counter++;
+        }
+    }
+
+    private void Merge(Func<double, double, bool> comparer)
+    {
+        using var srA = new StreamReader(AuxiliaryFilePathA);
+        using var srB = new StreamReader(AuxiliaryFilePathB);
+
+        using var sw = new StreamWriter(OutputFilePath);
+
+        var counterA = _seriesLength; 
+        var counterB = _seriesLength;
+
+        var strA = "";
+        var strB = "";
+
+        var isPickedA = false;
+        var isPickedB = false;
+        var isEndA = false;
+        var isEndB = false;
+
+        var lengthA = GetCountLinesFile(AuxiliaryFilePathA);
+        var lengthB = GetCountLinesFile(AuxiliaryFilePathB);
+
+        var positionA = 0L;
+        var positionB = 0L;
+
+        while (!isEndA || !isEndB)
+        {
+            if (counterA == 0 && counterB == 0)
+            {
+                counterA = _seriesLength;
+                counterB = _seriesLength;
+            }
+
+            if (positionA != lengthA)
+            {
+                if (counterA > 0 && !isPickedA)
+                {
+                    strA = srA.ReadLine();
+                    positionA++;
+                    isPickedA = true;
+                }
+            }
+            else
+            {
+                isEndA = true;
+            }
+
+            if (positionB != lengthB)
+            {
+                if (counterB > 0 && !isPickedB)
+                {
+                    strB = srB.ReadLine();
+                    positionB++;
+                    isPickedB = true;
+                }
+            }
+            else
+            {
+                isEndB = true;
+            }
+
+            if (isPickedA)
+            {
+                if (isPickedB)
+                {
+                    if (comparer(double.Parse(strA.Split(";")[SortKey], CultureInfo.InvariantCulture), double.Parse(strB.Split(";")[SortKey], CultureInfo.InvariantCulture)))
+                    {
+                        sw.WriteLine(strA);
+                        counterA--;
+                        isPickedA = false;
+                    }
+                    else
+                    {
+                        sw.WriteLine(strB);
+                        counterB--;
+                        isPickedB = false;
+                    }
+                }
+                else
+                {
+                    sw.WriteLine(strA);
+                    counterA--;
+                    isPickedA = false;
+                }
+            }
+            else if (isPickedB)
+            {
+                sw.WriteLine(strB);
+                counterB--;
+                isPickedB = false;
+            }
+        }
+
+        _seriesLength *= 2;
+    }
+}
+```
+
+#### Сортировка естественным слиянием
+```cs
+public class NaturalMergeSorter
+{
+    public string InputFilePath { get; set; }
+
+    public string OutputFilePath { get; set; } = "sorted.csv";
+
+    public int SortKey { get; set; }
+
+    private bool _isPassageFirst = true;
+
+    private long _countSegments;
+
+    private const string AuxiliaryFilePathA = "A.csv";
+
+    private const string AuxiliaryFilePathB = "B.csv";
+
+    private readonly Func<double, double, bool> _ascending = (x, y) => x < y; // Сортировка по возрастанию
+
+    private readonly Func<double, double, bool> _descending = (x, y) => x < y; // Сортировка по убыванию
+
+    public NaturalMergeSorter(string filePath = "unsorted.csv", int sortKey = 0)
+    {
+        InputFilePath = filePath;
+        SortKey = sortKey;
+    }
+
+    public void Sort() => Sort(_ascending);
+
+    public void SortDescending() => Sort(_descending);
+
+    private void Sort(Func<double, double, bool> order)
+    {
+        var index = 1;
+        while (true)
+        {
+            SplitToFiles(order);
+
+            if (_countSegments == 1) break;
+
+            Merge(order);
+        }
+    }
+
+    private static int GetCountLinesFile(string filePath)
+    {
+        using var sr = new StreamReader(filePath);
+        var count = 0;
+        while (sr.ReadLine() != null)
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    private void SplitToFiles(Func<double, double, bool> comparer)
+    {
+        _countSegments = 1;
+
+        using var sr = _isPassageFirst ? new StreamReader(InputFilePath) : new StreamReader(OutputFilePath);
+
+        using var swA = new StreamWriter(AuxiliaryFilePathA);
+        using var swB = new StreamWriter(AuxiliaryFilePathB);
+
+        var isStart = false;
+        var isFirstFile = true;
+
+        var length = GetCountLinesFile(_isPassageFirst ? InputFilePath : OutputFilePath);
+        _isPassageFirst = false;
+        var position = 0L;
+
+        var str = "";
+        var nextStr = "";
+
+        if (length == 1)
+        {
+            swA.WriteLine(sr.ReadLine());
+            return;
+        }
+
+        while (position != length)
+        {
+            if (!isStart)
+            {
+                str = sr.ReadLine();
+                position++;
+
+                swA.WriteLine(str);
+                isStart = true;
+            }
+
+            nextStr = sr.ReadLine();
+
+            position++;
+
+            if (comparer(double.Parse(nextStr.Split(";")[SortKey], CultureInfo.InvariantCulture), double.Parse(str.Split(";")[SortKey], CultureInfo.InvariantCulture)))
+            {
+                isFirstFile = !isFirstFile;
+                _countSegments++;
+            }
+
+            if (isFirstFile)
+            {
+                swA.WriteLine(nextStr);
+            }
+            else
+            {
+                swB.WriteLine(nextStr);
+            }
+
+            str = nextStr;
+        }
+    }
+
+    private void Merge(Func<double, double, bool> comparer)
+    {
+        using var srA = new StreamReader(AuxiliaryFilePathA);
+        using var srB = new StreamReader(AuxiliaryFilePathB);
+
+        using var sw = new StreamWriter(OutputFilePath);
+
+        var strA = "";
+        var strB = "";
+
+        var isPickedA = false;
+        var isPickedB = false;
+        var isEndA = false;
+        var isEndB = false;
+
+        var lengthA = GetCountLinesFile(AuxiliaryFilePathA);
+        var lengthB = GetCountLinesFile(AuxiliaryFilePathB);
+
+        var positionA = 0L;
+        var positionB = 0L;
+
+        while (!isEndA || !isEndB || isPickedA || isPickedB)
+        {
+            isEndA = positionA == lengthA;
+            isEndB = positionB == lengthB;
+
+            if (!isEndA && !isPickedA)
+            {
+                strA = srA.ReadLine();
+
+                positionA++;
+                isPickedA = true;
+            }
+
+            if (!isEndB && !isPickedB)
+            {
+                strB = srB.ReadLine();
+
+                positionB++;
+                isPickedB = true;
+            }
+
+            if (isPickedA)
+            {
+                if (isPickedB)
+                {
+                    if (comparer(double.Parse(strA.Split(";")[SortKey], CultureInfo.InvariantCulture),
+                            double.Parse(strB.Split(";")[SortKey], CultureInfo.InvariantCulture)))
+                    {
+                        sw.WriteLine(strA);
+                        isPickedA = false;
+                    }
+                    else
+                    {
+                        sw.WriteLine(strB);
+                        isPickedB = false;
+                    }
+                }
+                else
+                {
+                    sw.WriteLine(strA);
+                    isPickedA = false;
+                }
+            } else if (isPickedB)
+            {
+                sw.WriteLine(strB);
+                isPickedB = false;
+            }
+        }
+    }
+}
+```
+
+#### Сортировка многопутевым (прямым) слиянием
+```cs
+public class MultiWayMergeSorter
+{
+    private class HeadIndexPair
+    {
+        public string? Head { get; }
+        public int Index { get; }
+
+        public HeadIndexPair(string? head, int index)
+        {
+            Head = head;
+            Index = index;
+        }
+    }
+
+    public string InputFilePath { get; set; }
+
+    public  string OutputFilePath { get; set; } = "sorted.csv";
+
+    public int SortKey { get; set; }
+
+    public int CountChunkRows { get; set; }
+
+    public string ColumnSeparator { get; set; }
+
+    private const string TmpFilePrefix = "tmpFile";
+    private int _numChunk;
+
+    public MultiWayMergeSorter(string inputFilePath = "unsorted.csv", int countChunkRows = 10, int sortKey = 0, string columnSeparator = ";")
+    {
+        InputFilePath = inputFilePath;
+        CountChunkRows = countChunkRows;
+        SortKey = sortKey;
+        ColumnSeparator = columnSeparator;
+    }
+
+    public void Sort()
+    {
+        using var sr = new StreamReader(InputFilePath);
+        var cnt = 0;
+
+        var chunk = new string[CountChunkRows];
+
+        string? line;
+        while ((line = sr.ReadLine()) != null)
+        {
+            chunk[cnt] = line;
+            cnt++;
+            if (cnt % CountChunkRows == 0)
+            {
+                SortAndSaveChunk(chunk, TmpFilePrefix + _numChunk);
+                cnt = 0;
+                _numChunk++;
+            }
+        }
+
+        if (cnt != 0)
+        {
+            SortAndSaveChunk(chunk, TmpFilePrefix + _numChunk);
+            _numChunk++;
+        }
+
+        var readers = new StreamReader[_numChunk];
+
+        var heads = new PriorityQueue<HeadIndexPair, HeadIndexPair>(Comparer<HeadIndexPair>.Create((a, b) => Compare(a.Head, b.Head)));
+
+        for (var i = 0; i < _numChunk; i++)
+        {
+            var strRead = new StreamReader(TmpFilePrefix + i);
+            readers[i] = strRead;
+        }
+
+        using (var streamOut = new StreamWriter(OutputFilePath))
+        {
+            for (var i = 0; i < _numChunk; i++)
+            {
+                heads.Enqueue(new HeadIndexPair(readers[i].ReadLine(), i), new HeadIndexPair(readers[i].ReadLine(), i));
+            }
+
+            while (true)
+            {
+                var minH = heads.Count > 0 ? heads.Dequeue() : null;
+                if (null == minH) break;
+
+                streamOut.WriteLine(minH.Head);
+
+                if ((line = readers[minH.Index].ReadLine()) != null)
+                    heads.Enqueue(new HeadIndexPair(line, minH.Index), new HeadIndexPair(line, minH.Index));
+            }
+
+            for (var i = 0; i < _numChunk; i++)
+            {
+                readers[i].Close();
+            }
+                    
+        }
+
+        sr.Close();
+    }
+
+    private void SortAndSaveChunk(string?[] chunk, string filename)
+    {
+        Array.Sort(chunk, Compare);
+        using var sw = new StreamWriter(filename);
+        foreach (var t in chunk)
+        {
+            if (t != null) sw.WriteLine(t);
+        }
+
+        sw.Close();
+    }
+
+    private string ExtractCol(string line)
+    {
+        var columns = line.Split(ColumnSeparator);
+        return columns[SortKey];
+    }
+
+    private int Compare(string? a, string? b)
+    {
+        if (a == null && b == null) return 0;
+        if (a == null) return 1;
+        if (b == null) return -1;
+        return string.Compare(ExtractCol(a), ExtractCol(b), StringComparison.Ordinal);
     }
 }
 ```
