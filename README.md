@@ -26,7 +26,10 @@
   - [Реализация (C# пример)](./algForExam/QuickSortExtensions.cs)
 - [Билет 8: Внешняя сортировка слиянием (External merge sort)](#билет-8-внешняя-сортировка-слиянием-external-merge-sort)
   - [Описание](#билет-8-внешняя-сортировка-слиянием-external-merge-sort)
-  - [Реализация (C# пример)](./algForExam//ExternalSortExtensions.cs)
+  - [Реализация (C# пример)](./algForExam/ExternalSortExtensions.cs)
+- [Билет 9: Сортировка с помощью двоичного дерева (Tree Sort)](#билет-9-сортировка-с-помощью-двоичного-дерева-tree-sort)
+  - [Описание](#билет-9-сортировка-с-помощью-двоичного-дерева-tree-sort)
+  - [Реализация (C# пример)](./algForExam/TreeSortExtensions.cs)
 
 ## Билет 1: Пузырьковая сортировка (Bubble Sort)
 
@@ -461,7 +464,7 @@ private static int PartitionHoare<T>(this IList<T> collection, int left, int rig
 
 Дополнительно: https://intuit.ru/studies/courses/648/504/lecture/11473, https://studref.com/701956/informatika/estestvennoe_sliyanie, https://studfile.net/preview/930712/page:7, https://studref.com/701957/informatika/mnogoputevaya_sortirovka, https://www.geeksforgeeks.org/external-sorting, https://josef.codes/sorting-really-large-files-with-c-sharp
 
-### [Реализация (C# пример)](./algForExam//ExternalSortExtensions.cs)
+### [Реализация (C# пример)](./algForExam/ExternalSortExtensions.cs)
 
 #### Сортировка прямым слиянием
 ```cs
@@ -974,5 +977,126 @@ public class MultiWayMergeSorter
         if (b == null) return -1;
         return string.Compare(ExtractCol(a), ExtractCol(b), StringComparison.Ordinal);
     }
+}
+```
+
+## Билет 9: Сортировка с помощью двоичного дерева (Tree Sort)
+
+### Описание
+Алгоритм сортировки, основанный на структуре данных [**двоичное дерево поиска**](#двоичное-дерево-поиска). Сначала он создаёт двоичное дерево поиска из элементов входного списка или массива, а затем выполняет обход созданного двоичного дерева поиска по порядку, чтобы получить элементы в отсортированном порядке.
+
+***Алгоритм:***
+1. Возьмите элементы, введенные в массив.
+2. Создайте двоичное дерево поиска, вставив элементы данных из массива в двоичное дерево поиска.
+3. Выполните обход дерева по порядку, чтобы получить элементы в отсортированном порядке.
+
+**Сложность:**
+- <u>Средний случай:</u> *O(n \* log(n))*, добавление одного элемента в дерево двоичного поиска в среднем занимает *O(log(n))* времени. Следовательно, добавление *n* элементов займет *O(n \* log(n))* времени;
+- <u>Худший случай:</u> *O(n^2)*, может быть улучшена с помощью самобалансирующегося двоичного дерева поиска;
+
+**Вспомогательное пространство:** *O(n)*.
+
+#### Двоичное дерево поиска
+Структура данных двоичного дерева на основе узлов, которая обладает следующими свойствами:
+- *Левое поддерево узла содержит только узлы с ключами меньше, чем ключ узла.*
+- *Правое поддерево узла содержит только узлы с ключами больше, чем ключ узла.*
+- *Каждое из левого и правого поддеревьев также должно быть бинарным деревом поиска.*
+
+##### Поиск
+
+***Алгоритм:***
+1. Начните с корня.
+2. Сравните искомый элемент с корнем, если он меньше корня, то рекурсивно вызовите левое поддерево, иначе рекурсивно вызовите правое поддерево.
+3. Если элемент для поиска найден где угодно, верните true, иначе верните false.
+
+**Временная ложность:** *O(h)*, **Пространственная сложность:** *O(h)*, где *h* — высота бинарного дерева поиска.
+
+##### Вставка
+
+***Алгоритм:***
+1. Начните с корня. 
+2. Сравните вставляемый элемент с корнем, если он меньше корня, то рекурсивно вызовите левое поддерево, иначе рекурсивно вызовите правое поддерево. 
+3. Достигнув конца, просто вставьте этот узел слева (если он меньше текущего) или справа. 
+
+**Временная ложность:** *O(h)*, где *h* — высота бинарного дерева поиска, **Вспомогательное пространство:** *O(1)*.
+
+Дополнительно: https://www.geeksforgeeks.org/binary-search-tree-set-1-search-and-insertion, https://www.geeksforgeeks.org/tree-sort, https://www.programiz.com/dsa/binary-tree, https://intuit.ru/studies/courses/648/504/lecture/11472
+
+### [Реализация (C# пример)](./algForExam/TreeSortExtensions.cs)
+
+```cs
+public class Node<T> where T : IComparable
+{
+    public T Value { get; set; }
+
+    public Node<T>? Left { get; private set; }
+
+    public Node<T>? Right { get; private set; }
+
+    public Node(T value)
+    {
+        Value = value;
+    }
+
+    public void Insert(T value)
+    {
+        if (Value.CompareTo(value) > 0) // Сортировка по возрастанию
+        {
+            if (Left == null)
+            {
+                Left = new Node<T>(value);
+            }
+            else
+            {
+                Left.Insert(value);
+            }
+        }
+        else
+        {
+            if (Right == null)
+            {
+                Right = new Node<T>(value);
+            }
+            else
+            {
+                Right.Insert(value);
+            }
+        }
+    }
+
+    public IList<T> ToList(IList<T>? collection = null)
+    {
+        var index = 0;
+        return ToList(ref index, collection);
+    }
+
+    private IList<T> ToList(ref int index, IList<T>? collection = null)
+    {
+        collection ??= new List<T>();
+
+        Left?.ToList(ref index, collection);
+
+        collection[index++] = Value;
+
+        Right?.ToList(ref index, collection);
+
+        return collection;
+    }
+}
+
+public static IList<T> TreeSort<T>(this IList<T> collection) where T : IComparable
+{
+    if (collection.Count > 0)
+    {
+        var node = new Node<T>(collection[0]);
+        for (var i = 1; i < collection.Count; i++)
+        {
+            node.Insert(collection[i]);
+        }
+
+        node.ToList(collection);
+    }
+
+    return collection;
 }
 ```
