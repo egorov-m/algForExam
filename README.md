@@ -1186,3 +1186,194 @@ public static IList<int> CountingSort(this IList<int> collection, int exponent)
     return collection;
 }
 ```
+
+## Билет 11: Хэш-таблицы с разрешением коллизий методом цепочек
+
+### Описание
+В хеш-таблице новый индекс обрабатывается с помощью ключей. Элемент, соответствующий этому ключу, сохраняется в индекс. Этот процесс, называется хешированием. Хорошая хеш-функция предполагает достаточно быстрое вычисление, сводит к минимуму число коллизий.
+
+Идей цепочек состоит в том, чтобы реализовать массив, как связный список, называемый цепочкой. Это один из самых популярных и часто используемых методов обработки коллизий. 
+Когда возникает ситуация, что несколько элементов хэшируются в один и тот же индекс слота, затем эти элементы вставляются в односвязный список, известный как цепочка. Теперь мы можем использовать ключ K для поиска в связном списке, просто просматривая его линейно. Если внутренний ключ для какой-то записи совпадёт с ключом K, это будет означать, что мы нашли нашу запись. В случае, если мы достигли конца связного списка, но не нашли нашу запись, то это будет означать, что запись не существует. ***Вывод:*** если в отдельной цепочке два разных элемента имеют одинаковое значение хеш-функции, мы сохраняем оба элемента в одном и том же связном списке один за другим.
+
+**Производительность цепочек:**
+Производительность хеширования можно оценить в предположении, что каждый ключ с одинаковой вероятностью будет хэширован в любой слот таблицы (просто равномерное хеширование).
+m - количество слотов в хеш-таблице;
+n - количество вставленных значений в хеш-таблицу;
+Коэффициент загрузки: *α = n / m*;
+Ожидаемое время поиска: *O(1 + α)*;
+Ожидаемое время удаления: *O(1 + α)*;
+Время на вставку: *O(1)*;
+Сложность поиска, вставки и удаления ровна *O(1)*, если *α = O(1)*.
+
+Дополнительно: https://www.geeksforgeeks.org/separate-chaining-collision-handling-technique-in-hashing, https://www.programiz.com/dsa/hash-table
+
+### [Реализация (C# пример)](./algForExam/Dictionary.cs)
+```cs
+/// <summary> Словарь: хеш-таблица, разрешение коллизий методом цепочек </summary>
+/// <typeparam name="TKey"> Тип ключа </typeparam>
+/// <typeparam name="TValue"> Тип значения </typeparam>
+public class Dictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue?>>
+{
+    private readonly int _size;
+
+    public double FillFactor => (double)Count / _size;
+
+    public int MaxLengthChain => _items.Max(x => x?.Count ?? 0);
+
+    public int MinLengthChain => _items.Min(x => x?.Count ?? 0);
+
+    public IEnumerable<int> LengthsChains => _items.Select(x => x?.Count ?? 0);
+
+    public int Count { get; private set; }
+
+    private readonly LinkedList<KeyValuePair<TKey, TValue?>>?[] _items;
+
+    public Dictionary(int size = 1000)
+    {
+        if (!IsSizeCorrect(size)) throw new AggregateException(nameof(size));
+        _size = size;
+        _items = new LinkedList<KeyValuePair<TKey, TValue?>>[size];
+    }
+
+    public void Add(TKey key, TValue value)
+    {
+        if (key == null) throw new ArgumentNullException(nameof(key));
+        var item = new KeyValuePair<TKey, TValue?>(key, value);
+        Insert(item);
+    }
+
+    protected void Insert(KeyValuePair<TKey, TValue?> item)
+    {
+        var position = GetListPosition(item.Key);
+        var linkedList = GetLinkedList(position);
+
+        foreach (var pair in linkedList)
+        {
+            if (pair.Key != null && pair.Key.Equals(item.Key))
+                throw new ArgumentException("Элемент по указанному ключу уже существует.");
+        }
+
+        linkedList.AddLast(item);
+        Count++;
+    }
+
+    protected bool IsSizeCorrect(int size)
+    {
+        return size > 0;
+    }
+
+    public bool Remove(TKey key)
+    {
+        var position = GetListPosition(key);
+        var linkedList = GetLinkedList(position);
+        var itemFound = false;
+        var foundItem = default(KeyValuePair<TKey, TValue?>);
+        foreach (var item in linkedList)
+        {
+            if (item.Key != null && item.Key.Equals(key))
+            {
+                itemFound = true;
+                foundItem = item;
+            }
+        }
+
+        if (itemFound)
+        {
+            linkedList.Remove(foundItem);
+            Count--;
+        }
+        return itemFound;
+    }
+
+    public bool ContainsKey(TKey key)
+    {
+        if (key == null) throw new ArgumentNullException(nameof(key));
+        var position = GetListPosition(key);
+        var linkedList = GetLinkedList(position);
+
+        var foundItem = false;
+        foreach (var item in linkedList)
+        {
+            if (item.Key != null && item.Key.Equals(key))
+            {
+                foundItem = true;
+                break;
+            }
+        }
+
+        return foundItem;
+    }
+
+    public TValue? GetValue(TKey key)
+    {
+        if (key == null) throw new ArgumentNullException(nameof(key));
+        var position = GetListPosition(key);
+        var linkedList = GetLinkedList(position);
+        foreach (var item in linkedList)
+        {
+            if (item.Key != null && item.Key.Equals(key)) return item.Value;
+        }
+
+        return default;
+    }
+
+    public bool TryGetValue(TKey key, out TValue value)
+    {
+        var t = GetValue(key);
+        value = t;
+        return t != null;
+    }
+
+    protected int GetListPosition(TKey key)
+    {
+
+        return Math.Abs(key.GetHashCode() % _size); // Метод деления
+
+        // Метод умножения
+        // var goldenRatioConst = (Math.Sqrt(5) - 1) / 2;
+        // return (int) Math.Abs(_size * (key.GetHashCode() * goldenRatioConst % 1));
+    }
+
+    protected LinkedList<KeyValuePair<TKey, TValue?>> GetLinkedList(int position)
+    {
+        var linkedList = _items[position];
+        if (linkedList == null)
+        {
+            linkedList = new LinkedList<KeyValuePair<TKey, TValue?>>();
+            _items[position] = linkedList;
+        }
+
+        return linkedList;
+    }
+
+    public void Clear()
+    {
+        if (Count > 0)
+        {
+            for (var i = 0; i < _items.Length; i++)
+            {
+                _items[i] = null;
+            }
+        }
+    }
+
+    public IEnumerator<KeyValuePair<TKey, TValue?>> GetEnumerator()
+    {
+        foreach (var linkedList in _items)
+        {
+            if (linkedList != null)
+            {
+                foreach (var keyValuePair in linkedList)
+                {
+                    yield return keyValuePair;
+                }
+            }
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+}
+```
