@@ -1579,3 +1579,72 @@ public class Hashtable<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue?>>
     }
 }
 ```
+
+## Билет 13: ABC сортировка для строк (Allen Beechick Character Sort for string)
+
+### Описание
+Лексографическая вариация поразрядной MSD (по наибольшей значащей цифре) сортировки. Автор Аллен Бичик выбрал название в честь себя любимого, ABCsort расшифровывается как Allen Beechick Character sort. Сам по себе Бичик примечателен тем, что он не только программист, а ещё и целый магистр богословия.
+
+Для сортировки требуется два вспомогательных массива.
+
+Один из них назовём трекер слов (WT – word tracker), с помощью него мы будем группировать слова, имеющих одинаковые буквы в i-м разряде. Для самого первого найденного такого слова в списке заносится значение 0. Для каждого последующего найденного слова с той же буквой в i-м разряде в трекере слов отмечается индекс предыдущего слова, соответствующего этому же признаку.
+![Трекер слов. Изображение 1.](https://habrastorage.org/r/w1560/getpro/habr/post_images/1aa/247/736/1aa247736af37cd4f09016f37d58beea.png)
+
+Ещё один массив – трекер символов (LT – letter tracker). В нём отмечаются индексы самого первого (или последнего) слова в списке, в котором в соответствующем разряде находится определённый символ. Отталкиваясь от этого слова, с помощью трекера слов восстанавливается цепочка всех остальных лексем, имеющих в i-м разряде соответствующую букву.
+![Трекер символов. Изображение 2.](https://habrastorage.org/r/w1560/getpro/habr/post_images/bd1/c6f/06a/bd1c6f06a50f27443d411ab1abb33e02.png)
+
+Создавая и прослеживая подобные цепочки слов, рекурсивно продвигаясь от старших разрядов к младшим, в итоге весьма быстро формируются новые последовательности, упорядоченные в алфавитном порядке. Отсортировав слова на «A», затем сортируется «B», затем «C» и далее по алфавиту.
+![Демонстрация работы алгоритма. Изображение 3.](https://habrastorage.org/getpro/habr/post_images/8f8/fba/5df/8f8fba5df90727ad721be8b081f9da3c.gif)
+
+**Сложность:** *O(k * n)*, где *k* —  количество обрабатываемых разрядов.
+
+**Вспомогательное пространство:** *O(n)*.
+
+Дополнительно: https://habr.com/ru/post/201534/, http://www.aislebyaisle.com/cb/access/sorting/beechicksort.htm, http://algolab.valemak.com/radix
+
+### [Реализация (C# пример)](./algForExam/ABCSortExtensions.cs)
+```cs
+private static IList<string> ABCSort(this IList<string> collection, int rank)
+{
+    if (collection.Count < 2) return collection;
+
+    var table = new System.Collections.Generic.Dictionary<char, IList<string>>(); // key - символ в позиции rank, список слов с символом key в позиции rank
+    var listResult = new List<string>();
+    var shortWordsCounter = 0;
+
+    foreach (var str in collection)
+    {
+        if (rank < str.Length)
+        {
+            if (table.ContainsKey(str[rank]))
+            {
+                table[str[rank]].Add(str);
+            }
+            else
+            {
+                table.Add(str[rank], new List<string> {str});
+            }
+        }
+        else
+        {
+            listResult.Add(str);
+            shortWordsCounter++;
+        }
+    }
+
+    if (shortWordsCounter == collection.Count) return collection;
+
+    for (var i = 'A'; i <= 'z'; i++)
+    {
+        if (table.ContainsKey(i))
+        {
+            foreach (var str in ABCSort(table[i], rank + 1))
+            {
+                listResult.Add(str);
+            }
+        }
+    }
+
+    return listResult;
+}
+```
