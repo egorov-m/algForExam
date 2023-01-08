@@ -33,6 +33,12 @@
 - [Билет 10: Поразрядная сортировка (Radix Sort)](#билет-10-поразрядная-сортировка-radix-sort)
   - [Описание](#билет-10-поразрядная-сортировка-radix-sort)
   - [Реализация (C# пример)](./algForExam/RadixSortExtensions.cs)
+- [Билет 11: Хэш-таблицы с разрешением коллизий методом цепочек](#билет-11-хэш-таблицы-с-разрешением-коллизий-методом-цепочек)
+  - [Описание](#билет-11-хэш-таблицы-с-разрешением-коллизий-методом-цепочек)
+  - [Реализация (C# пример)](./algForExam/Dictionary.cs)
+- [Билет 12: Хэш-таблицы с разрешением коллизий методом открытой адресации](#билет-12-хэш-таблицы-с-разрешением-коллизий-методом-открытой-адресации)
+  - [Описание](#билет-12-хэш-таблицы-с-разрешением-коллизий-методом-открытой-адресации)
+  - [Реализация (C# пример)](./algForExam/Hashtable.cs)
 
 ## Билет 1: Пузырьковая сортировка (Bubble Sort)
 
@@ -1197,15 +1203,15 @@ public static IList<int> CountingSort(this IList<int> collection, int exponent)
 
 **Производительность цепочек:**
 Производительность хеширования можно оценить в предположении, что каждый ключ с одинаковой вероятностью будет хэширован в любой слот таблицы (просто равномерное хеширование).
-m - количество слотов в хеш-таблице;
-n - количество вставленных значений в хеш-таблицу;
-Коэффициент загрузки: *α = n / m*;
-Ожидаемое время поиска: *O(1 + α)*;
-Ожидаемое время удаления: *O(1 + α)*;
-Время на вставку: *O(1)*;
-Сложность поиска, вставки и удаления ровна *O(1)*, если *α = O(1)*.
+- m - количество слотов в хеш-таблице;
+- n - количество вставленных значений в хеш-таблицу;
+- Коэффициент загрузки: *α = n / m*;
+- Ожидаемое время поиска: *O(1 + α)*;
+- Ожидаемое время удаления: *O(1 + α)*;
+- Время на вставку: *O(1)*;
+- Сложность поиска, вставки и удаления ровна *O(1)*, если *α = O(1)*.
 
-Дополнительно: https://www.geeksforgeeks.org/separate-chaining-collision-handling-technique-in-hashing, https://www.programiz.com/dsa/hash-table
+Дополнительно: https://www.geeksforgeeks.org/separate-chaining-collision-handling-technique-in-hashing, https://www.programiz.com/dsa/hash-table, https://iq.opengenus.org/time-complexity-of-hash-table
 
 ### [Реализация (C# пример)](./algForExam/Dictionary.cs)
 ```cs
@@ -1367,6 +1373,202 @@ public class Dictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue?>>
                 {
                     yield return keyValuePair;
                 }
+            }
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+}
+```
+
+## Билет 12: Хэш-таблицы с разрешением коллизий методом открытой адресации
+
+### Описание
+Подобно методу цепочек, открытая адресация является методом обработки коллизий. В открытой адресации все элементы хранятся в самой хеш-таблице. Таким образом, в любой момент размер таблицы должен быть больше или равен общему количеству ключей (обратите внимание, что мы можем увеличить размер таблицы, скопировав старые данные, если это необходимо). Этот подход также известен как закрытое хеширование. Вся эта процедура основана на исследованиях: линейное, квадратичное, двойное.
+
+**Преимущества перед методом цепочек:**
+- Открытая адресация повышает скорость кэширования, поскольку все данные хранятся в хеш-таблице.
+- Он правильно использует свои пустые индексы и повышает эффективность использования памяти.
+- Поскольку не используется связанный список или указатель, производительность выше, чем при цепочке или открытом хешировании.
+
+**Операции:**
+- добавление элемента — продолжается поиск, пока не будет найден пустой слот, как только найден, вставляем k;
+- поиск элемента — продолжать поиск пока ключ слота не станет равным k или пока не будет достигнут пустой слот; 
+- удаление — есть нюансы, если мы просто удалим ключ, то поиск может не получиться, поэтому слоты удалённых ключей помечаются как удалённые, возможность вставить элемент в удалённый слот останется, но поиск на месте удалённого слота останавливаться не будет;
+
+**Производительность открытой адресации:**
+Подобно цепочке, производительность хеширования можно оценить, исходя из предположения, что каждый ключ с одинаковой вероятностью будет хэширован в любой слот таблицы (простое равномерное хеширование).
+- m - количество слотов в хеш-таблице;
+- n - количество вставленных значений в хеш-таблицу;
+- Коэффициент загрузки: *α = n / m (< 1)*;
+- Сложность поиска, вставки и удаления ровна *O(1 / (1 + α))*.
+
+Дополнительно: https://www.geeksforgeeks.org/open-addressing-collision-handling-technique-in-hashing, https://www.programiz.com/dsa/hash-table, https://iq.opengenus.org/time-complexity-of-hash-table
+
+### [Реализация (C# пример)](./algForExam/Hashtable.cs)
+```cs
+/// <summary> Хеш-таблица, разрешение коллизий методом открытой адресации </summary>
+/// <typeparam name="TKey"> Тип ключа </typeparam>
+/// <typeparam name="TValue"> Тип значения </typeparam>
+public class Hashtable<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue?>>
+{
+    private readonly int _size;
+
+    private readonly KeyValuePair<TKey, TValue?>[] _items;
+
+    private readonly bool[] _removed;
+
+    private static readonly Func<Func<object, int, int>, object, int, int, int> LinearHashing =
+        (f, key, sizeHashTable, index) => (f(key, sizeHashTable) + index) % sizeHashTable;
+
+    private static readonly Func<Func<object, int, int>, object, int, int, int> QuadraticHashing =
+        (f, key, sizeHashTable, index) => (f(key, sizeHashTable) + (int)Math.Pow(index, 2)) % sizeHashTable;
+
+    private static readonly Func<Func<object, int, int>, Func<object, int, int>, object, int, int, int> DoubleHashing =
+        (f1, f2, key, sizeHashTable, index) => (f1(key, sizeHashTable) + index * f2(key, sizeHashTable)) % sizeHashTable;
+
+    public int Count { get; private set; }
+
+    public int MaxClusterLength
+    {
+        get
+        {
+            var max = 0;
+            var current = 0;
+            foreach (var item in _items)
+            {
+                if (!item.Equals(default(KeyValuePair<TKey, TValue?>)))
+                {
+                    current++;
+                }
+                else
+                {
+                    max = Math.Max(max, current);
+                    current = 0;
+                }
+            }
+
+            return Math.Max(max, current);
+        }
+    }
+
+    public Hashtable(int size = 1000)
+    {
+        if (!IsSizeCorrect(size)) throw new AggregateException(nameof(size));
+        _size = size;
+        _items = new KeyValuePair<TKey, TValue?>[size];
+        _removed = new bool[_size];
+    }
+
+    protected bool CheckOpenSpace()
+    {
+        var isOpen = false;
+        for (var i = 0; i < _size; i++)
+        {
+            if (_items[i].Equals(default(KeyValuePair<TKey, TValue?>))) isOpen = true;
+        }
+
+        return isOpen;
+    }
+
+    protected bool IsSizeCorrect(int size)
+    {
+        return size > 0;
+    }
+
+    protected bool CheckUniqueKey(TKey key)
+    {
+        foreach (var item in _items)
+        {
+            if (item.Key != null && item.Key.Equals(key)) return false;
+        }
+
+        return true;
+    }
+
+    public void Add(TKey key, TValue value)
+    {
+        if (key == null) throw new ArgumentNullException(nameof(key));
+
+        if (!CheckOpenSpace()) throw new ArgumentOutOfRangeException("Хеш-таблица переполнена.");
+
+        if (!CheckUniqueKey(key)) throw new ArgumentException("Элемент по указанному ключу уже существует.");
+
+        Insert(key, value);
+    }
+
+    protected void Insert(TKey key, TValue value)
+    {
+        var index = 0;
+        var hashCode = GetHash(key, index);
+
+        while (!_items[hashCode].Equals(default(KeyValuePair<TKey, TValue>)) && !_items[hashCode].Key.Equals(key))
+        {
+            index++;
+            hashCode = GetHash(key, index);
+        }
+
+        _items[hashCode] = new KeyValuePair<TKey, TValue?>(key, value);
+        _removed[hashCode] = false;
+        Count++;
+    }
+
+    protected int GetHash(TKey key, int index)
+    {
+        // Линейный анализ, вспомогательная функция — метод деления.
+        return LinearHashing((key, sizeHashTable) => Math.Abs(key.GetHashCode() % sizeHashTable), key, _size, index);
+    }
+
+    public TValue? GetValue(TKey key)
+    {
+        if (key == null) throw new ArgumentNullException(nameof(key));
+
+        var index = 0;
+        var hashCode = GetHash(key, index);
+
+        while ((!_items[hashCode].Equals(default(KeyValuePair<TKey, TValue>)) || _removed[hashCode]) && !_items[hashCode].Key.Equals(key))
+        {
+            index++;
+            hashCode = GetHash(key, index);
+        }
+
+        return _items[hashCode].Value;
+    }
+
+    public bool Remove(TKey key)
+    {
+        var index = 0;
+        var hashCode = GetHash(key, index);
+
+        while ((!_items[hashCode].Equals(default(KeyValuePair<TKey, TValue>)) || _removed[hashCode]) && !_items[hashCode].Key.Equals(key))
+        {
+            index++;
+            hashCode = GetHash(key, index);
+        }
+
+        if (_items[hashCode].Equals(default(KeyValuePair<TKey, TValue>)))
+        {
+            return false;
+        }
+        else
+        {
+            _items[hashCode] = default;
+            _removed[hashCode] = true;
+            Count--;
+            return true;
+        }
+    }
+
+    public IEnumerator<KeyValuePair<TKey, TValue?>> GetEnumerator()
+    {
+        foreach (var keyValuePair in _items)
+        {
+            if (!keyValuePair.Equals(default(KeyValuePair<TKey, TValue?>)))
+            {
+                yield return keyValuePair;
             }
         }
     }
