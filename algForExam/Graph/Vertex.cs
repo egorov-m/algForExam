@@ -19,12 +19,12 @@ namespace algForExam.Graph
                 }
             }
 
-            public IList<Edge<TEdge, TVertex>> EdgesList { get; protected set; }
+            public List<Edge<TEdge, TVertex>> EdgesList { get; protected set; }
 
             public Vertex(TVertex data, params Edge<TEdge, TVertex>[] edgeList)
             {
                 Data = data;
-                EdgesList = edgeList;
+                EdgesList = edgeList.ToList();
             }
 
             public bool HasSetData(TVertex? data) => data != null;
@@ -56,8 +56,8 @@ namespace algForExam.Graph
 
             public override int GetHashCode()
             {
-                var hash = Data.GetHashCode() ^ EdgesList.Count;
-                foreach (var edge in EdgesList) hash ^= edge.GetHashCode();
+                var hash = Data.ToString().GetHashCode() ^ EdgesList.Count;
+                foreach (var edge in EdgesList) hash ^= edge.ToString().GetHashCode();
 
                 return hash;
             }

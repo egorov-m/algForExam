@@ -6,9 +6,9 @@ namespace algForExam.Graph
                                          where TVertex: IComparable
                                          where TEdge : IComparable
     {
-        public IList<Vertex<TVertex, TEdge>> Vertices { get; }
+        public List<Vertex<TVertex, TEdge>> Vertices { get; }
 
-        public IList<Edge<TEdge, TVertex>> Edges { get; }
+        public List<Edge<TEdge, TVertex>> Edges { get; }
 
         public int Count { get; private set; }
 

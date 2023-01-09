@@ -6,7 +6,7 @@
         {
             public Vertex<TVertex, TEdge> InitialVertex { get; set; }
 
-            public Vertex<TVertex, TEdge> DestinationVertex { get; set; }
+            public Vertex<TVertex, TEdge> DestinationVertex { get; }
 
             private TEdge _weight;
             public TEdge Weight
@@ -48,7 +48,7 @@
 
             public override int GetHashCode()
             {
-                return InitialVertex.GetHashCode() ^ DestinationVertex.GetHashCode() * Weight.GetHashCode();
+                return InitialVertex.ToString().GetHashCode() ^ DestinationVertex.ToString().GetHashCode() * Weight.GetHashCode();
             }
 
             public override string ToString()
