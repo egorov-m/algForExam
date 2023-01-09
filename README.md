@@ -57,6 +57,9 @@
 - [Билет 18: Обход графа в глубину (Depth-First Search, DFS)](#билет-18-обход-графа-в-глубину-depth-first-search-dfs)
   - [Описание](#билет-18-обход-графа-в-глубину-depth-first-search-dfs)
   - [Реализация (C# пример)](./algForExam/DfsGraphExtensions.cs)
+- [Билет 19: Обход графа в ширину (Breadth-first search, BFS)](#билет-19-обход-графа-в-ширину-breadth-first-search-bfs)
+  - [Описание](#билет-19-обход-графа-в-ширину-breadth-first-search-bfs)
+  - [Реализация (C# пример)](./algForExam/BfsGraphExtensions.cs)
 
 ## Билет 1: Пузырьковая сортировка (Bubble Sort)
 
@@ -2075,6 +2078,56 @@ public static IEnumerable<Vertex<TVertex, TEdge>> Dfs<TVertex, TEdge>(this Verte
                 if (el != null)
                 {
                     stack.Push(el);
+                }
+            }
+        }
+    }
+}
+```
+
+## Билет 19: Обход графа в ширину (Breadth-first search, BFS)
+
+### Описание
+Суть достаточно проста. Обход начинается с посещения определённой вершины (для обхода всего графа часто выбирается произвольная вершина). Затем алгоритм посещает соседей этой вершины. За ними - соседей соседей, и так далее.
+
+**Реализация:** Используется очередь. В нее будут закладываться вершины после того, как до них будет определено кратчайшее расстояние. То есть очередь будет содержать вершины, которые были «обнаружены» алгоритмом, но не были рассмотрены исходящие ребра из этих вершин. Из очереди последовательно извлекаются вершины, рассматриваются все исходящие из них ребра. Если ребро ведет в не обнаруженную до этого вершину, то есть расстояние до новой вершины не определено, то оно устанавливается равным на единицу больше, чем расстояние до обрабатываемой вершины, а новая вершина добавляется в конец очереди.
+
+Таким образом, если из очереди извлечена вершина с расстоянием *d*, то в конец очереди будут добавлены вершины с расстоянием *d + 1*, то есть в любой момент исполнения алгоритма очередь состоит из вершин, удаленных на расстояние *d*, за которыми следуют вершины, удаленные на расстояние *d + 1*.
+
+**Сложность:** *O(V + E)*, где *V* — общее количество вершин, *E* — общее количество рёбер.
+
+Дополнительно: https://www.geeksforgeeks.org/breadth-first-search-or-bfs-for-a-graph, https://www.programiz.com/dsa/graph-bfs
+
+### [Реализация (C# пример)](./algForExam/BfsGraphExtensions.cs)
+
+**Реализацию самого графа можно найти [здесь](./algForExam/Graph).**
+
+```cs
+public static IEnumerable<Vertex<TVertex, TEdge>> Bfs<TVertex, TEdge>(this Vertex<TVertex, TEdge> startVertex) where TVertex : IComparable where TEdge : IComparable
+{
+    var queue = new Queue<Vertex<TVertex, TEdge>>();
+    var visitedVertices = new List<Vertex<TVertex, TEdge>>();
+    var visitedEdges = new List<Edge<TEdge, TVertex>>();
+
+    queue.Enqueue(startVertex);
+
+    while (queue.Count > 0)
+    {
+        var currentVertex = queue.Dequeue();
+        if (visitedVertices.Contains(currentVertex)) continue;
+        visitedVertices.Add(currentVertex);
+
+        yield return currentVertex;
+
+        foreach (var edge in currentVertex.EdgesList)
+        {
+            if (!visitedEdges.Contains(edge))
+            {
+                visitedEdges.Add(edge);
+                var el = edge.InitialVertex == currentVertex ? edge.DestinationVertex : edge.InitialVertex;
+                if (el != null)
+                {
+                    queue.Enqueue(el);
                 }
             }
         }
