@@ -51,6 +51,9 @@
 - [Билет 16: Алгоритм Крускала (поиска минимального остовного дерева)](#билет-16-алгоритм-крускала-поиска-минимального-остовного-дерева)
   - [Описание](#билет-16-алгоритм-крускала-поиска-минимального-остовного-дерева)
   - [Реализация (C# пример)](./algForExam/KruskalGraphExtensions.cs)
+- [Билет 17: Алгоритм Прима (поиска минимального остовного дерева)](#билет-17-алгоритм-прима-поиска-минимального-остовного-дерева)
+  - [Описание](#билет-17-алгоритм-прима-поиска-минимального-остовного-дерева)
+  - [Реализация (C# пример)](./algForExam/PrimaGraphExtensions.cs)
 
 ## Билет 1: Пузырьковая сортировка (Bubble Sort)
 
@@ -1940,5 +1943,90 @@ public static (IList<Edge<int, TVertex>>, int) Kruskal<TVertex>(this Graph<TVert
     }
 
     return (result, minCost);
+}
+```
+
+## Билет 17: Алгоритм Прима (поиска минимального остовного дерева)
+
+### Описание
+Как и алгоритм Крускала, также является жадным алгоритмом.
+
+**Идея** состоит в том, чтобы поддерживать два набора вершин. Первый набор содержит вершины, уже включенные в MST, другой набор содержит еще не включенные вершины. На каждом шаге он рассматривает все ребра, соединяющие два множества, и выбирает ребро с минимальным весом из этих ребер. После выбора ребра он перемещает другую конечную точку ребра в набор, содержащий MST. 
+
+**Итак**, на каждом шаге алгоритма Прима находим разрез (из двух наборов, один содержит вершины, уже включенные в MST, а другой содержит остальные вершины), выбирают ребро минимального веса из разреза и включают эту вершину в Набор MST (набор, содержащий уже включенные вершины).
+
+***Алгоритм:***
+- Создайте набор mstSet , который отслеживает вершины, уже включенные в MST;
+- Присвойте ключевое значение всем вершинам входного графа. Инициализируйте все значения ключей как INFINITE. Присвойте значение ключа как 0 для первой вершины, чтобы она выбиралась первой;
+- Пока mstSet не включает все вершины:
+  - Выберите вершину u , которой нет в mstSet и которая имеет минимальное значение ключа;
+  - Включите u в mstSet;
+  - Обновите ключевое значение всех смежных вершин u . Чтобы обновить ключевые значения, выполните итерацию по всем соседним вершинам. Для каждой соседней вершины v , если вес ребра uv меньше, чем предыдущее значение ключа v , обновите значение ключа как вес uv;
+
+**Сложность:** *O(V^2)*.
+
+Дополнительно: https://www.geeksforgeeks.org/prims-minimum-spanning-tree-mst-greedy-algo-5, https://www.programiz.com/dsa/prim-algorithm
+
+
+### [Реализация (C# пример)](./algForExam/PrimaGraphExtensions.cs)
+
+**Реализацию самого графа можно найти [здесь](./algForExam/Graph).**
+
+```cs
+public static (IList<Edge<int, TVertex>>, int) Prima<TVertex>(this Graph<TVertex, int> graph) where TVertex : IComparable
+{
+    var minCost = 0;
+
+    var notVisitedVertices = graph.Vertices.ToList();
+    var visitedVertices = new List<Vertex<TVertex, int>>();
+
+    var notVisitedEdges = graph.Edges.ToList();
+    var visitedEdges = new List<Edge<int, TVertex>>();
+
+    if (graph.Vertices.Count > 0)
+    {
+        // Выбираем первую вершину для просмотра
+        var visitedVertex = notVisitedVertices[0];
+        visitedVertices.Add(visitedVertex);
+        notVisitedVertices.Remove(visitedVertex);
+
+        while (notVisitedVertices.Count > 0)
+        {
+            var indexMinEdge = -1;
+
+            for (var i = 0; i < notVisitedEdges.Count; i++) // Обходим не посещённые вершины
+            {
+                if (visitedVertices.IndexOf(notVisitedEdges[i].InitialVertex) != -1 && notVisitedVertices.IndexOf(notVisitedEdges[i].DestinationVertex) != -1 || 
+                    visitedVertices.IndexOf(notVisitedEdges[i].DestinationVertex) != -1 && notVisitedVertices.IndexOf(notVisitedEdges[i].InitialVertex) != -1)
+                {
+                    if (indexMinEdge != -1)
+                    {
+                        if (notVisitedEdges[i].Weight < notVisitedEdges[indexMinEdge].Weight) indexMinEdge = i;
+                    }
+                    else
+                    {
+                        indexMinEdge = i;
+                    }
+                }
+            }
+
+            if (visitedVertices.IndexOf(notVisitedEdges[indexMinEdge].InitialVertex) != -1) // Проверка, что посещёна
+            {
+                visitedVertices.Add(notVisitedEdges[indexMinEdge].DestinationVertex);
+                notVisitedVertices.Remove(notVisitedEdges[indexMinEdge].DestinationVertex);
+            }
+            else
+            {
+                visitedVertices.Add(notVisitedEdges[indexMinEdge].InitialVertex);
+                notVisitedVertices.Remove(notVisitedEdges[indexMinEdge].InitialVertex);
+            }
+
+            visitedEdges.Add(notVisitedEdges[indexMinEdge]);
+            minCost += notVisitedEdges[indexMinEdge].Weight;
+            notVisitedEdges.RemoveAt(indexMinEdge);
+        }
+    }
+
+    return (visitedEdges, minCost);
 }
 ```
