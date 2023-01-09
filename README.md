@@ -54,6 +54,9 @@
 - [Билет 17: Алгоритм Прима (поиска минимального остовного дерева)](#билет-17-алгоритм-прима-поиска-минимального-остовного-дерева)
   - [Описание](#билет-17-алгоритм-прима-поиска-минимального-остовного-дерева)
   - [Реализация (C# пример)](./algForExam/PrimaGraphExtensions.cs)
+- [Билет 18: Обход графа в глубину (Depth-First Search, DFS)](#билет-18-обход-графа-в-глубину-depth-first-search-dfs)
+  - [Описание](#билет-18-обход-графа-в-глубину-depth-first-search-dfs)
+  - [Реализация (C# пример)](./algForExam/DfsGraphExtensions.cs)
 
 ## Билет 1: Пузырьковая сортировка (Bubble Sort)
 
@@ -2028,5 +2031,53 @@ public static (IList<Edge<int, TVertex>>, int) Prima<TVertex>(this Graph<TVertex
     }
 
     return (visitedEdges, minCost);
+}
+```
+
+## Билет 18: Обход графа в глубину (Depth-First Search, DFS)
+
+### Описание
+Один из основных методов обхода графа, часто используется для проверки связности, поиска цикла и т.д. Общая идея состоит в том, что для каждой не пройденной вершины необходимо найти все не пройденные смежные вершины и повторить поиск для них.
+
+**Реализация:** Используем стек. Начинаем с того, что помещаем стартовую вершину графа на вершину стека. Далее берём верхний элемент стека и отмечаем его как посещённый. Все смежные вершины, которых не отмечены как посещённые помещаем в верх стека. Продолжаем повторять эти действия до тех пор пока стек не станет пустым.
+
+**Сложность:** *O(V + E)*, где *V* — общее количество вершин, *E* — общее количество рёбер.
+
+Дополнительно: https://www.geeksforgeeks.org/depth-first-search-or-dfs-for-a-graph, https://www.programiz.com/dsa/graph-dfs
+
+### [Реализация (C# пример)](./algForExam/DfsGraphExtensions.cs)
+
+**Реализацию самого графа можно найти [здесь](./algForExam/Graph).**
+
+```cs
+public static IEnumerable<Vertex<TVertex, TEdge>> Dfs<TVertex, TEdge>(this Vertex<TVertex, TEdge> startVertex) where TVertex : IComparable where TEdge : IComparable
+{
+    var stack = new Stack<Vertex<TVertex, TEdge>>();
+    var visitedVertices = new List<Vertex<TVertex, TEdge>>();
+    var visitedEdges = new List<Edge<TEdge, TVertex>>();
+
+    stack.Push(startVertex);
+
+    while (stack.Count > 0)
+    {
+        var currentVertex = stack.Pop();
+        if (visitedVertices.Contains(currentVertex)) continue;
+        visitedVertices.Add(currentVertex);
+
+        yield return currentVertex;
+
+        foreach (var edge in currentVertex.EdgesList)
+        {
+            if (!visitedEdges.Contains(edge))
+            {
+                visitedEdges.Add(edge);
+                var el = edge.InitialVertex == currentVertex ? edge.DestinationVertex : edge.InitialVertex;
+                if (el != null)
+                {
+                    stack.Push(el);
+                }
+            }
+        }
+    }
 }
 ```
