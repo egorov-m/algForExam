@@ -39,6 +39,12 @@
 - [Билет 12: Хэш-таблицы с разрешением коллизий методом открытой адресации](#билет-12-хэш-таблицы-с-разрешением-коллизий-методом-открытой-адресации)
   - [Описание](#билет-12-хэш-таблицы-с-разрешением-коллизий-методом-открытой-адресации)
   - [Реализация (C# пример)](./algForExam/Hashtable.cs)
+- [Билет 13: ABC сортировка для строк (Allen Beechick Character Sort for string)](#билет-13-abc-сортировка-для-строк-allen-beechick-character-sort-for-string)
+  - [Описание](#билет-13-abc-сортировка-для-строк-allen-beechick-character-sort-for-string)
+  - [Реализация (C# пример)](./algForExam/ABCSortExtensions.cs)
+- [Билет 14: Реализовать стек и базовые операции работы со стеком, с использованием собственного двусвязного списка](#билет-14-реализовать-стек-и-базовые-операции-работы-со-стеком-с-использованием-собственного-двусвязного-списка)
+  - [Описание](#билет-14-реализовать-стек-и-базовые-операции-работы-со-стеком-с-использованием-собственного-двусвязного-списка)
+  - [Реализация (C# пример)](./algForExam/Stack.cs)
 
 ## Билет 1: Пузырьковая сортировка (Bubble Sort)
 
@@ -1646,5 +1652,89 @@ private static IList<string> ABCSort(this IList<string> collection, int rank)
     }
 
     return listResult;
+}
+```
+
+## Билет 14: Реализовать стек и базовые операции работы со стеком, с использованием собственного двусвязного списка
+
+### Описание
+**Стек** — это линейная структура данных, которая следует принципу «последним пришел — первым вышел» (LIFO). Это означает, что последний элемент, вставленный в стек, удаляется первым.
+
+**Операции:**
+- ***Push*** — операция добавления элемента на вершину стека;
+- ***Pop*** — извлечение элемента с вершины стека;
+- ***IsEmpty*** — проверка, пуст ли стек;
+- ***Peek*** — получить значение верхнего элемента, не удаляя его;
+
+**Сложность операций:** *O(1)*.
+
+Дополнительно: https://www.geeksforgeeks.org/implement-a-stack-using-singly-linked-list, https://www.geeksforgeeks.org/c-sharp-stack-with-examples, https://www.programiz.com/dsa/stack, https://www.programiz.com/csharp-programming/stack
+
+### [Реализация (C# пример)](./algForExam/Stack.cs)
+```cs
+public class Stack<T> : IReadOnlyCollection<T>
+{
+    private class Node<T>
+    {
+        public T Value { get; }
+
+        public Node<T> Top { get; init; }
+
+        public Node(T value)
+        {
+            Value = value;
+        }
+    }
+
+    private Node<T>? _top;
+
+    public int Count { get; private set; }
+
+    public void Push(T element)
+    {
+        var newNode = new Node<T>(element)
+        {
+            Top = _top
+        };
+        _top = newNode;
+        Count++;
+    }
+
+    public T Pop()
+    {
+        if (IsEmpty()) throw new InvalidOperationException("Стек пуст, нельзя извлечь элемент.");
+
+        var elem = _top.Value;
+        _top = _top.Top;
+        Count--;
+        return elem;
+    }
+
+    public T Peek()
+    {
+        if (IsEmpty()) throw new InvalidOperationException("Стек пуст, нельзя получить элемент.");
+
+        return _top.Value;
+    }
+
+    public bool IsEmpty()
+    {
+        return _top == null;
+    }
+
+    public IEnumerator<T> GetEnumerator()
+    {
+        var node = _top;
+        while (node != null)
+        {
+            yield return node.Value;
+            node = node.Top;
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
 }
 ```
