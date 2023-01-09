@@ -48,6 +48,9 @@
 - [Билет 15: Реализовать очередь и базовые операции работы с очередью, с использованием собственного двусвязного списка](#билет-15-реализовать-очередь-и-базовые-операции-работы-с-очередью-с-использованием-собственного-двусвязного-списка)
   - [Описание](#билет-15-реализовать-очередь-и-базовые-операции-работы-с-очередью-с-использованием-собственного-двусвязного-списка)
   - [Реализация (C# пример)](./algForExam/Queue.cs)
+- [Билет 16: Алгоритм Крускала (поиска минимального остовного дерева)](#билет-16-алгоритм-крускала-поиска-минимального-остовного-дерева)
+  - [Описание](#билет-16-алгоритм-крускала-поиска-минимального-остовного-дерева)
+  - [Реализация (C# пример)](./algForExam/KruskalGraphExtensions.cs)
 
 ## Билет 1: Пузырьковая сортировка (Bubble Sort)
 
@@ -1824,5 +1827,118 @@ public class Queue<T> : IReadOnlyCollection<T>
     {
         return GetEnumerator();
     }
+}
+```
+
+## Билет 16: Алгоритм Крускала (поиска минимального остовного дерева)
+
+### Описание
+Алгоритм поиска минимального остовного дерева, который находит ребро наименьшего возможного веса, соединяющее любые две вершины графа. Это жадный алгоритм в теории графов, поскольку он находит минимальное остовное дерево для связного взвешенного графа, добавляя рёбра с возрастающей стоимостью на каждом шаге. Это означает, что он находит подмножество ребер, образующих дерево, включающее каждую вершину, где общий вес всех ребер в дереве минимален.
+
+**Сложность алгоритма:** Сортировка ребер занимает время *O(E * log(E))*. После сортировки мы перебираем все ребра и применяем алгоритм ***Union-Find***. Операции поиска и объединения могут занимать не более *O*(log(V))* времени. Таким образом, общая сложность составляет *O(E * log(E) + E * log(V))* времени, где *V* — количество вершин, *E* — количество рёбер.
+
+***Принцип работы алгоритма:***
+1. Рёбра графа сортируются в порядке не убывания.
+2. Выбираем наименьшее ребро. Проверяем, образует ли он цикл с уже сформированным остовным деревом. Если цикл не формируется, включаем это ребро. В противном случае отказываемся от него.
+3. Повторяем шаг 2, пока в связующем дереве не будет *V - 1* рёбер.
+
+Алгоритм ***Union-Find*** (используется в шаге 2): это алгоритм, который выполняет две полезные операции: **Найти:** определить, в каком подмножестве находится конкретный элемент. Это можно использовать для определения того, находятся ли два элемента в одном и том же подмножестве. **Объединение:** объединение двух подмножеств в одно подмножество. Здесь сначала мы должны проверить, принадлежат ли два подмножества одному и тому же множеству. Если нет, то мы не можем выполнить объединение.
+
+**Идея:** Первоначально создайте подмножества, содержащие только один узел, который является родителем самого себя. Теперь при обходе ребер, если два конечных узла ребра принадлежат одному и тому же множеству, они образуют цикл. В противном случае выполните объединение, чтобы объединить подмножества вместе.
+
+**Сложность:** в худшем случае занимает *O(n)*, но может быть улучшена до *O(log(n))*.
+
+#### Оптимизация
+
+**Объединение по рангу:** Идея состоит в том, чтобы всегда прикреплять дерево меньшей глубины под корень более глубокого дерева.
+
+**Path Compression:** Идея сжатия пути состоит в том, чтобы сделать найденный корень родителем *x*, чтобы нам не приходилось снова проходить все промежуточные узлы. Если *x* является корнем поддерева, то путь (к корню) от всех узлов под *x* также сжимается.
+
+**Сложность:** Временная сложность каждой операции становится даже меньше *O(log(n))*. 
+
+Дополнительно: https://www.geeksforgeeks.org/kruskals-minimum-spanning-tree-algorithm-greedy-algo-2, https://www.programiz.com/dsa/kruskal-algorithm, https://www.geeksforgeeks.org/introduction-to-disjoint-set-data-structure-or-union-find-algorithm, https://www.geeksforgeeks.org/union-by-rank-and-path-compression-in-union-find-algorithm
+
+### [Реализация (C# пример)](./algForExam/KruskalGraphExtensions.cs)
+
+**Реализацию самого графа можно найти [здесь](./algForExam/Graph).**
+
+```cs
+/// <summary> Класс подмножество для алгоритма Union-find</summary>
+private class Subset<TVertex, TEdge> where TVertex : IComparable where TEdge : IComparable
+{
+    public  Vertex<TVertex, TEdge>  Parent { get; set; }
+
+    public int Rank { get; set; }
+}
+
+/// <summary> Метод выполняющий поиск, сжатия пути </summary>
+private static Vertex<TVertex, TEdge> Find<TVertex, TEdge>(IReadOnlyDictionary<Vertex<TVertex, TEdge>, Subset<TVertex, TEdge>> subsets, Vertex<TVertex, TEdge> parent) where TVertex : IComparable where TEdge : IComparable
+{
+    // Идея: сделать найденный корень родителем 
+    if (subsets[parent].Parent != parent)
+        subsets[parent].Parent = Find(subsets, subsets[parent].Parent);
+
+    return subsets[parent].Parent;
+}
+
+/// <summary> Метод объединения вершин для Union-find </summary>
+private static void Union<TVertex, TEdge>(IReadOnlyDictionary<Vertex<TVertex, TEdge>, Subset<TVertex, TEdge>> subsets, Vertex<TVertex, TEdge> vertex1, Vertex<TVertex, TEdge> vertex2) where TVertex : IComparable where TEdge : IComparable
+{
+    var xRoot = Find(subsets, vertex1);
+    var yRoot = Find(subsets, vertex2);
+
+    // Идея: подкреплять дерево меньшей глубины под корень более глубокого дерева
+    if (subsets[xRoot].Rank < subsets[yRoot].Rank)
+    {
+        subsets[xRoot].Parent = yRoot;
+    }
+    else if (subsets[xRoot].Rank > subsets[yRoot].Rank)
+    {
+        subsets[yRoot].Parent = xRoot;
+    }
+    else
+    {
+        subsets[yRoot].Parent = xRoot;
+        ++subsets[xRoot].Rank;
+    }
+}
+
+public static (IList<Edge<int, TVertex>>, int) Kruskal<TVertex>(this Graph<TVertex, int> graph) where TVertex : IComparable
+{
+    var verticesCount = graph.Vertices.Count;
+    var edges = graph.Edges.ToList();
+    var result = new List<Edge<int, TVertex>>();
+
+    var edgesCounter = 0;
+    var verticesCounter = 0;
+    var minCost = 0;
+
+    edges.Sort();
+
+    var subsets = new System.Collections.Generic.Dictionary<Vertex<TVertex, int>, Subset<TVertex, int>>();
+
+    foreach (var vertex in graph.Vertices) // Массив множеств, вершины сами себе родители
+    {
+        subsets.Add(vertex, new Subset<TVertex, int>() {Parent = vertex, Rank = 0});
+    }
+
+    while (verticesCounter < verticesCount - 1)
+    {
+        var nextEdge = edges[edgesCounter++];
+
+        var x = Find(subsets, nextEdge.InitialVertex);
+        var y = Find(subsets, nextEdge.DestinationVertex);
+
+        if (x != y)
+        {
+            result.Add(nextEdge);
+            minCost += nextEdge.Weight;
+            verticesCounter++;
+
+            Union(subsets, x, y);
+        }
+    }
+
+    return (result, minCost);
 }
 ```
