@@ -60,6 +60,9 @@
 - [Билет 19: Обход графа в ширину (Breadth-first search, BFS)](#билет-19-обход-графа-в-ширину-breadth-first-search-bfs)
   - [Описание](#билет-19-обход-графа-в-ширину-breadth-first-search-bfs)
   - [Реализация (C# пример)](./algForExam/BfsGraphExtensions.cs)
+- [Билет 20: Алгоритм Дейкстры (поиск кратчайшего пути) (Dijkstra's algorithm)](#билет-20-алгоритм-дейкстры-поиск-кратчайшего-пути-dijkstras-algorithm)
+  - [Описание](#билет-20-алгоритм-дейкстры-поиск-кратчайшего-пути-dijkstras-algorithm)
+  - [Реализация (C# пример)](./algForExam/DijkstraGraphExtensions.cs)
 
 ## Билет 1: Пузырьковая сортировка (Bubble Sort)
 
@@ -2132,5 +2135,89 @@ public static IEnumerable<Vertex<TVertex, TEdge>> Bfs<TVertex, TEdge>(this Verte
             }
         }
     }
+}
+```
+
+## Билет 20: Алгоритм Дейкстры (поиск кратчайшего пути) (Dijkstra's algorithm)
+
+### Описание
+Алгоритм, который находит кротчайший путь от одной вершины графа до другой. Графы используют для моделирования реальных объектов, а алгоритмы поиска пути — при их изучении, а также решении практических задач. Алгоритм Дейкстры работает для графов, у которых нет ребер с отрицательным весом, т.е. таких, при прохождении через которые длина пути как бы уменьшается.
+В отличие от похожих алгоритмов, алгоритм Дейкстры ищет оптимальный маршрут от одной заданной вершины ко всем остальным. Попутно он высчитывает длину пути — суммарный вес ребер, по которым проходит при этом маршруте.
+
+**Реализация:** На каждом шаге алгоритма он раскрывает какую-то вершину в графе. Изначальная цена пути в начальной вершине ноль. На каждом шаге раскрываем вершину у которой оценка минимальна. Когда мы раскрываем вершину, мы просматриваем все смежные с ней и для каждой из них строим свою оценку, прибавлением веса ребра к оценке раскрываемой вершины. Далее смотрим какую вершину раскрывать дальше, тут проявляется жадность алгоритма. Раскрывая выбранную вершину, мы просматриваем все инцидентные ей и обновляем оценку для них. Так продолжаем дальше. Когда мы раскрываем вершину и оказывается, что она конечная алгоритм останавливается. Как собственно найти оптимальный путь? Каждый раз обновляя оценку мы будем запоминать из какой вершины это обновление поступило.
+
+**Сложность:** *O(V^2)*, где *V* — количество вершин графа.
+
+Дополнительно: https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-greedy-algo-7, https://www.programiz.com/dsa/dijkstra-algorithm
+
+### [Реализация (C# пример)](./algForExam/DijkstraGraphExtensions.cs)
+
+**Реализацию самого графа можно найти [здесь](./algForExam/Graph).**
+
+```cs
+private class DijkstraData<TVertex, TEdge> where TVertex : IComparable where TEdge : IComparable
+{
+    public int Price { get; init; }
+
+    public Vertex<TVertex, TEdge>? Previous { get; init; }
+}
+
+public static IEnumerable<Vertex<TVertex, int>> Dijkstra<TVertex>(this Graph<TVertex, int> graph, Vertex<TVertex, int> start, Vertex<TVertex, int> end) where TVertex : IComparable
+{
+    var noVisitedVertices = graph.Vertices.ToList();
+
+    var track = new System.Collections.Generic.Dictionary<Vertex<TVertex, int>, DijkstraData<TVertex, int>>();
+
+    track[start] = new DijkstraData<TVertex, int> {Previous = null, Price = 0};
+
+    while (true)
+    {
+        Vertex<TVertex, int>? toOpen = null;
+        var bestPrice = int.MaxValue;
+
+        foreach (var vertexElement in noVisitedVertices)
+        {
+            if (track.ContainsKey(vertexElement) && track[vertexElement].Price < bestPrice)
+            {
+                toOpen = vertexElement;
+                bestPrice = track[vertexElement].Price;
+            }
+        }
+
+        if (toOpen != null && toOpen.Equals(end))
+        {
+            break;
+        }
+
+        if (toOpen != null)
+        {
+            foreach (var edge in toOpen.EdgesList)
+            {
+                var currentPrice = track[toOpen].Price + edge.Weight;
+
+                var nextVertex = edge.InitialVertex.Equals(toOpen) ? edge.DestinationVertex : edge.InitialVertex;
+
+                if (!track.ContainsKey(nextVertex) || track[nextVertex].Price > currentPrice)
+                {
+                    track[nextVertex] = new DijkstraData<TVertex, int> {Price = currentPrice, Previous = toOpen};
+                }
+            }
+
+            noVisitedVertices.Remove(toOpen);
+        }
+    }
+
+    var result = new List<Vertex<TVertex, int>>();
+    
+    var tmp = end;
+    while (tmp != null)
+    {
+        result.Add(tmp);
+        tmp = track[tmp].Previous;
+    }
+
+    result.Reverse();
+
+    return result;
 }
 ```
